@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bilan patrimonial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C2B33;
+    --paper:#F7F4EC;
+    --paper-light:#FBFAF6;
+    --bronze:#8A6D3B;
+    --bronze-light:#C9A86A;
+    --sage:#3E5C50;
+    --line:#D8D2C2;
+    --line-soft:#E7E2D4;
+    --error:#A33A2D;
+    --ok:#3E5C50;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Source Serif 4',serif;
+    font-weight:600;
+    margin:0;
+  }
+
+  /* ===== Layout shell ===== */
+  .shell{
+    display:flex;
+    min-height:100vh;
+  }
+  .toc{
+    width:260px;
+    flex-shrink:0;
+    background:var(--ink);
+    color:var(--paper-light);
+    padding:36px 28px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  .toc-dossier{
+    font-family:'Source Serif 4',serif;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--bronze-light);
+    margin-bottom:4px;
+  }
+  .toc-title{
+    font-family:'Source Serif 4',serif;
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:28px;
+    line-height:1.25;
+  }
+  .toc-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    border-top:1px solid rgba(247,244,236,0.15);
+  }
+  .toc-list li{
+    border-bottom:1px solid rgba(247,244,236,0.15);
+  }
+  .toc-list a{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:13px 0;
+    color:rgba(247,244,236,0.55);
+    text-decoration:none;
+    font-size:13.5px;
+    transition:color .15s;
+  }
+  .toc-list a:hover{color:var(--paper-light);}
+  .toc-list a.active{color:var(--paper-light);font-weight:500;}
+  .toc-mark{
+    width:16px;height:16px;
+    border:1px solid rgba(247,244,236,0.4);
+    border-radius:50%;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .toc-mark svg{width:9px;height:9px;opacity:0;}
+  li.done .toc-mark{background:var(--bronze-light);border-color:var(--bronze-light);}
+  li.done .toc-mark svg{opacity:1;}
+  li.done a{color:var(--paper-light);}
+
+  .toc-foot{
+    margin-top:28px;
+    padding-top:18px;
+    border-top:1px solid rgba(247,244,236,0.15);
+    font-size:11.5px;
+    color:rgba(247,244,236,0.45);
+    line-height:1.6;
+  }
+
+  .main{
+    flex:1;
+    max-width:760px;
+    padding:56px 64px 120px;
+  }
+  @media (max-width:900px){
+    .toc{display:none;}
+    .main{padding:32px 24px 100px; max-width:none;}
+  }
+
+  /* ===== Header ===== */
+  .doc-head{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:24px;
+    margin-bottom:36px;
+  }
+  .doc-ref{
+    font-size:11.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--bronze);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .doc-head h1{
+    font-size:30px;
+    margin-bottom:10px;
+  }
+  .doc-sub{
+    color:#5a5a52;
+    font-size:14.5px;
+    max-width:520px;
+  }
+
+  /* ===== Mode toggle ===== */
+  .mode-switch{
+    display:flex;
+    gap:0;
+    margin-bottom:40px;
+    border:1px solid var(--ink);
+    border-radius:var(--radius);
+    overflow:hidden;
+    width:fit-content;
+  }
+  .mode-switch button{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    padding:10px 20px;
+    border:none;
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s,color .15s;
+  }
+  .mode-switch button.active{
+    background:var(--ink);
+    color:var(--paper-light);
+  }
+  .mode-switch button:not(.active):hover{
+    background:rgba(28,43,51,0.06);
+  }
+  .mode-hint{
+    font-size:13px;
+    color:#5a5a52;
+    margin:-28px 0 36px 0;
+  }
+
+  /* ===== Sections ===== */
+  .section{
+    margin-bottom:56px;
+    scroll-margin-top:24px;
+  }
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:6px;
+  }
+  .section-num{
+    font-family:'Source Serif 4',serif;
+    color:var(--bronze);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.06em;
+  }
+  .section h2{
+    font-size:21px;
+    margin-top:2px;
+  }
+  .section-desc{
+    color:#6b6b62;
+    font-size:13.5px;
+    margin-bottom:22px;
+    max-width:540px;
+  }
+  .section-divider{
+    border:none;
+    border-top:1px solid var(--line);
+    margin:0 0 22px 0;
+  }
+
+  /* ===== Form elements ===== */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px 20px;
+  }
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:600px){
+    .grid, .grid.cols-3{grid-template-columns:1fr;}
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field.full{grid-column:1 / -1;}
+  label{
+    font-size:12.5px;
+    font-weight:600;
+    color:#44443e;
+  }
+  label .opt{
+    font-weight:400;
+    color:#9a9588;
+    text-transform:none;
+    letter-spacing:0;
+  }
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="tel"],
+  input[type="email"],
+  select,
+  textarea{
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--paper-light);
+    color:var(--ink);
+    width:100%;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  textarea{resize:vertical;min-height:70px;font-family:'Inter',sans-serif;}
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--bronze);
+    box-shadow:0 0 0 3px rgba(138,109,59,0.12);
+  }
+  input::placeholder{color:#b8b2a0;}
+  .unit-field{position:relative;}
+  .unit-field input{padding-right:36px;}
+  .unit-suffix{
+    position:absolute;
+    right:12px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:13px;
+    color:#9a9588;
+    pointer-events:none;
+  }
+  .radio-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .radio-chip{
+    position:relative;
+  }
+  .radio-chip input{
+    position:absolute;
+    opacity:0;
+    width:100%;height:100%;
+    cursor:pointer;
+    margin:0;
+  }
+  .radio-chip span{
+    display:inline-block;
+    padding:8px 16px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    font-size:13.5px;
+    background:var(--paper-light);
+    transition:all .15s;
+  }
+  .radio-chip input:checked + span{
+    background:var(--ink);
+    color:var(--paper-light);
+    border-color:var(--ink);
+  }
+
+  /* repeating rows (income/charges/épargne) */
+  .line-table{
+    border:1px solid var(--line-soft);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .line-row{
+    display:grid;
+    grid-template-columns:1fr 130px 130px;
+    gap:0;
+    border-bottom:1px solid var(--line-soft);
+    align-items:center;
+  }
+  .line-row:last-child{border-bottom:none;}
+  .line-row.heading{
+    background:#EFEAD9;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:#6b6258;
+  }
+  .line-row.heading > div{padding:9px 14px;}
+  .line-label{
+    padding:11px 14px;
+    font-size:14px;
+    border-right:1px solid var(--line-soft);
+  }
+  .line-row input{
+    border:none;
+    border-radius:0;
+    background:transparent;
+    text-align:right;
+    padding:11px 14px;
+  }
+  .line-row input:not(:last-child){border-right:1px solid var(--line-soft);}
+  .line-row input:focus{box-shadow:none;background:#fff;}
+
+  .subtotal-row{
+    display:flex;
+    justify-content:space-between;
+    padding:12px 14px;
+    background:#EFEAD9;
+    font-weight:600;
+    font-size:13.5px;
+    border-top:1px solid var(--line-soft);
+  }
+  .subtotal-row .val{font-family:'Source Serif 4',serif;color:var(--ink);}
+
+  .repeat-block{margin-bottom:26px;}
+  .repeat-block > .label-row{
+    font-size:12.5px;
+    font-weight:600;
+    color:#44443e;
+    margin-bottom:8px;
+  }
+
+  .add-row-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:10px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--sage);
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:0;
+  }
+  .add-row-btn:hover{text-decoration:underline;}
+
+  /* immobilier card */
+  .property-card{
+    border:1px solid var(--line-soft);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:16px;
+    background:var(--paper-light);
+  }
+  .property-card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .property-card-head h3{
+    font-size:14.5px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+  }
+  .remove-btn{
+    font-size:12px;
+    color:var(--error);
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .remove-btn:hover{text-decoration:underline;}
+
+  /* nav buttons */
+  .nav-buttons{
+    display:flex;
+    justify-content:space-between;
+    margin-top:8px;
+    padding-top:24px;
+    border-top:1px solid var(--line);
+  }
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:11px 22px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    border:1px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    transition:all .15s;
+  }
+  .btn:hover{background:rgba(28,43,51,0.06);}
+  .btn-primary{
+    background:var(--ink);
+    color:var(--paper-light);
+  }
+  .btn-primary:hover{background:#0e1820;}
+  .btn-bronze{
+    background:var(--bronze);
+    border-color:var(--bronze);
+    color:#fff;
+  }
+  .btn-bronze:hover{background:#75582d;}
+
+  /* Submit section */
+  .submit-block{
+    background:var(--ink);
+    color:var(--paper-light);
+    border-radius:var(--radius);
+    padding:32px 36px;
+    margin-top:8px;
+  }
+  .submit-block h2{color:var(--paper-light);font-size:20px;margin-bottom:10px;}
+  .submit-block p{font-size:13.5px;color:rgba(247,244,236,0.7);margin:0 0 22px 0;max-width:480px;}
+  .consent-row{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    margin-bottom:22px;
+    font-size:13px;
+    color:rgba(247,244,236,0.75);
+  }
+  .consent-row input{margin-top:3px;flex-shrink:0;}
+
+  .status-msg{
+    margin-top:16px;
+    font-size:13.5px;
+    padding:12px 14px;
+    border-radius:var(--radius);
+    display:none;
+  }
+  .status-msg.show{display:block;}
+  .status-msg.success{background:rgba(62,92,80,0.15);color:#cfe0d8;}
+  .status-msg.error{background:rgba(163,58,45,0.2);color:#f2c9c2;}
+
+  /* progress indicator top */
+  .progress-bar{
+    height:3px;
+    background:rgba(247,244,236,0.15);
+    border-radius:2px;
+    overflow:hidden;
+    margin-top:18px;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--bronze-light);
+    width:0%;
+    transition:width .3s;
+  }
+  .progress-label{
+    font-size:11px;
+    color:rgba(247,244,236,0.5);
+    margin-top:8px;
+  }
+
+  /* print stamp aesthetic flourish */
+  .corner-mark{
+    position:absolute;
+    top:0;right:0;
+    font-family:'Source Serif 4',serif;
+    font-size:60px;
+    color:rgba(28,43,51,0.03);
+    line-height:1;
+    user-select:none;
+    pointer-events:none;
+  }
+  .doc-head{position:relative;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="toc" id="toc">
+    <div class="toc-dossier" id="dossierNum">DOSSIER N° —</div>
+    <div class="toc-title">Bilan patrimonial</div>
+    <ul class="toc-list" id="tocList">
+      <li data-section="identite"><a href="#identite"><span class="toc-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#1C2B33" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>Identité &amp; situation</a></li>
+      <li data-section="revenus"><a href="#revenus"><span class="toc-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#1C2B33" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>Revenus mensuels</a></li>
+      <li data-section="charges"><a href="#charges"><span class="toc-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#1C2B33" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>Charges mensuelles</a></li>
+      <li data-section="epargne"><a href="#epargne"><span class="toc-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#1C2B33" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>Épargne &amp; placements</a></li>
+      <li data-section="immobilier"><a href="#immobilier"><span class="toc-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#1C2B33" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>Patrimoine immobilier</a></li>
+      <li data-section="envoi"><a href="#envoi"><span class="toc-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#1C2B33" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>Validation &amp; envoi</a></li>
+    </ul>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0 % complété</div>
+    <div class="toc-foot">Document confidentiel. Les informations recueillies sont destinées exclusivement à votre conseiller dans le cadre de l'établissement de votre bilan patrimonial.</div>
+  </nav>
+
+  <main class="main">
+    <form id="bilanForm">
+
+      <div class="doc-head">
+        <span class="corner-mark">§</span>
+        <div class="doc-ref"> Conseil en gestion de patrimoine</div>
+        <h1>Bilan patrimonial personnel</h1>
+        <p class="doc-sub">Merci de compléter ce document avec le plus grand soin. Ces informations permettent à votre conseiller d'établir une vision précise de votre situation et de vous proposer des recommandations adaptées.</p>
+      </div>
+
+      <div class="mode-switch">
+        <button type="button" class="active" data-mode="simple">Vue simplifiée</button>
+        <button type="button" data-mode="detail">Vue détaillée</button>
+      </div>
+      <p class="mode-hint" id="modeHint">La vue simplifiée regroupe vos revenus, charges et épargne par grandes catégories — idéale pour une première estimation rapide.</p>
+
+      <!-- ============ SECTION 1 : IDENTITÉ ============ -->
+      <section class="section" id="identite">
+        <div class="section-head">
+          <div>
+            <div class="section-num">Section 01</div>
+            <h2>Identité &amp; situation familiale</h2>
+          </div>
+        </div>
+        <p class="section-desc">Ces informations permettent à votre conseiller de contextualiser votre dossier.</p>
+        <hr class="section-divider">
+
+        <div class="grid">
+          <div class="field"><label>Nom</label><input type="text" name="nom" placeholder="Dupont"></div>
+          <div class="field"><label>Prénom</label><input type="text" name="prenom" placeholder="Claire"></div>
+          <div class="field"><label>Date de naissance</label><input type="date" name="date_naissance"></div>
+          <div class="field"><label>Lieu de naissance</label><input type="text" name="lieu_naissance"></div>
+          <div class="field"><label>Téléphone</label><input type="tel" name="telephone" placeholder="06 12 34 56 78"></div>
+          <div class="field"><label>Email</label><input type="email" name="email" placeholder="claire.dupont@email.com"></div>
+          <div class="field full"><label>Adresse</label><input type="text" name="adresse" placeholder="12 rue des Lilas, 78300 Poissy"></div>
+          <div class="field"><label>Profession</label><input type="text" name="profession"></div>
+          <div class="field"><label>Situation matrimoniale</label>
+            <select name="situation_matrimoniale">
+              <option value="">Sélectionner…</option>
+              <option>Célibataire</option>
+              <option>Marié(e)</option>
+              <option>Pacsé(e)</option>
+              <option>En concubinage</option>
+              <option>Divorcé(e)</option>
+              <option>Veuf / Veuve</option>
+            </select>
+          </div>
+          <div class="field full"><label>Nombre d'enfants à charge <span class="opt">(facultatif)</span></label><input type="number" name="nb_enfants" min="0" placeholder="0"></div>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 2 : REVENUS ============ -->
+      <section class="section" id="revenus">
+        <div class="section-head">
+          <div>
+            <div class="section-num">Section 02</div>
+            <h2>Revenus mensuels</h2>
+          </div>
+        </div>
+        <p class="section-desc">Montants nets mensuels, avant prélèvement à la source si applicable.</p>
+        <hr class="section-divider">
+
+        <!-- SIMPLE MODE -->
+        <div class="mode-block" data-mode-show="simple">
+          <div class="grid">
+            <div class="field"><label>Salaires nets (foyer)</label>
+              <div class="unit-field"><input type="number" name="s_salaires" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Revenus locatifs</label>
+              <div class="unit-field"><input type="number" name="s_locatifs" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Pensions / retraites</label>
+              <div class="unit-field"><input type="number" name="s_pensions" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Autres revenus</label>
+              <div class="unit-field"><input type="number" name="s_autres_revenus" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAIL MODE -->
+        <div class="mode-block" data-mode-show="detail" style="display:none;">
+          <div class="line-table">
+            <div class="line-row heading"><div>Type de revenu</div><div>Vous</div><div>Conjoint (si couple)</div></div>
+            <div class="line-row"><div class="line-label">Salaire net mensuel</div><input type="number" name="d_salaire_1" placeholder="0"><input type="number" name="d_salaire_2" placeholder="0"></div>
+            <div class="line-row"><div class="line-label">Revenus locatifs</div><input type="number" name="d_locatif_1" placeholder="0"><input type="number" name="d_locatif_2" placeholder="0"></div>
+            <div class="line-row"><div class="line-label">Revenus mobiliers</div><input type="number" name="d_mobilier_1" placeholder="0"><input type="number" name="d_mobilier_2" placeholder="0"></div>
+            <div class="line-row"><div class="line-label">Revenus BIC</div><input type="number" name="d_bic_1" placeholder="0"><input type="number" name="d_bic_2" placeholder="0"></div>
+            <div class="line-row"><div class="line-label">Revenus BNC</div><input type="number" name="d_bnc_1" placeholder="0"><input type="number" name="d_bnc_2" placeholder="0"></div>
+            <div class="line-row"><div class="line-label">Pensions / retraites</div><input type="number" name="d_pension_1" placeholder="0"><input type="number" name="d_pension_2" placeholder="0"></div>
+            <div class="line-row"><div class="line-label">Primes (moy. 3 ans)</div><input type="number" name="d_primes_1" placeholder="0"><input type="number" name="d_primes_2" placeholder="0"></div>
+            <div class="line-row"><div class="line-label">Autres revenus</div><input type="number" name="d_autres_1" placeholder="0"><input type="number" name="d_autres_2" placeholder="0"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 3 : CHARGES ============ -->
+      <section class="section" id="charges">
+        <div class="section-head">
+          <div>
+            <div class="section-num">Section 03</div>
+            <h2>Charges mensuelles</h2>
+          </div>
+        </div>
+        <p class="section-desc">Vos charges fixes incompressibles et vos dépenses de loisirs.</p>
+        <hr class="section-divider">
+
+        <div class="mode-block" data-mode-show="simple">
+          <div class="grid">
+            <div class="field"><label>Logement (loyer / crédit RP)</label>
+              <div class="unit-field"><input type="number" name="s_logement" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Impôts &amp; taxes</label>
+              <div class="unit-field"><input type="number" name="s_impots" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Vie courante (nourriture, transport…)</label>
+              <div class="unit-field"><input type="number" name="s_vie_courante" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Crédits en cours</label>
+              <div class="unit-field"><input type="number" name="s_credits" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Loisirs &amp; vacances</label>
+              <div class="unit-field"><input type="number" name="s_loisirs" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+            <div class="field"><label>Autres charges</label>
+              <div class="unit-field"><input type="number" name="s_autres_charges" placeholder="0"><span class="unit-suffix">€ / mois</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mode-block" data-mode-show="detail" style="display:none;">
+          <div class="repeat-block">
+            <div class="label-row">Charges incompressibles</div>
+            <div class="line-table">
+              <div class="line-row heading"><div>Poste</div><div>Montant</div><div></div></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Loyer</div><input type="number" name="d_loyer" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Impôt sur le revenu (mensualisé)</div><input type="number" name="d_impot_revenu" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Impôt / taxe foncière</div><input type="number" name="d_taxe_fonciere" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Taxe d'habitation</div><input type="number" name="d_taxe_habitation" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Nourriture</div><input type="number" name="d_nourriture" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Transport (essence, train, Navigo…)</div><input type="number" name="d_transport" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Électricité, eau, chauffage</div><input type="number" name="d_energie" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Internet &amp; téléphone</div><input type="number" name="d_telecom" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Assurances</div><input type="number" name="d_assurances" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Crédit résidence principale</div><input type="number" name="d_credit_rp" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Crédit(s) consommation</div><input type="number" name="d_credit_conso" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Pensions alimentaires versées</div><input type="number" name="d_pension_alim" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Charges de copropriété</div><input type="number" name="d_copro" placeholder="0"></div>
+            </div>
+          </div>
+          <div class="repeat-block">
+            <div class="label-row">Loisirs (mensuel)</div>
+            <div class="line-table">
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Restaurants &amp; sorties</div><input type="number" name="d_restaurants" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Sports &amp; loisirs</div><input type="number" name="d_sports" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Vacances (provision mensuelle)</div><input type="number" name="d_vacances" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Vêtements &amp; décoration</div><input type="number" name="d_vetements" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Abonnements (TV, cours…)</div><input type="number" name="d_abonnements" placeholder="0"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 4 : EPARGNE ============ -->
+      <section class="section" id="epargne">
+        <div class="section-head">
+          <div>
+            <div class="section-num">Section 04</div>
+            <h2>Épargne &amp; placements financiers</h2>
+          </div>
+        </div>
+        <p class="section-desc">Stock actuel constitué — montant disponible aujourd'hui sur chaque support.</p>
+        <hr class="section-divider">
+
+        <div class="mode-block" data-mode-show="simple">
+          <div class="grid">
+            <div class="field"><label>Liquidités (comptes courants, livrets)</label>
+              <div class="unit-field"><input type="number" name="s_liquidites" placeholder="0"><span class="unit-suffix">€</span></div>
+            </div>
+            <div class="field"><label>Épargne réglementée (PEL, LDDS…)</label>
+              <div class="unit-field"><input type="number" name="s_epargne_reglementee" placeholder="0"><span class="unit-suffix">€</span></div>
+            </div>
+            <div class="field"><label>Assurance vie</label>
+              <div class="unit-field"><input type="number" name="s_assurance_vie" placeholder="0"><span class="unit-suffix">€</span></div>
+            </div>
+            <div class="field"><label>Épargne retraite (PER, PERCO…)</label>
+              <div class="unit-field"><input type="number" name="s_retraite" placeholder="0"><span class="unit-suffix">€</span></div>
+            </div>
+            <div class="field"><label>Placements boursiers (PEA, CTO…)</label>
+              <div class="unit-field"><input type="number" name="s_boursier" placeholder="0"><span class="unit-suffix">€</span></div>
+            </div>
+            <div class="field"><label>SCPI / autres placements</label>
+              <div class="unit-field"><input type="number" name="s_scpi" placeholder="0"><span class="unit-suffix">€</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mode-block" data-mode-show="detail" style="display:none;">
+          <div class="line-table">
+            <div class="line-row heading"><div>Support</div><div>Montant</div><div></div></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Compte courant</div><input type="number" name="d_cc" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Livret A</div><input type="number" name="d_livreta" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">LDDS</div><input type="number" name="d_ldds" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Livret Jeune</div><input type="number" name="d_livretjeune" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">CEL</div><input type="number" name="d_cel" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">PEL</div><input type="number" name="d_pel" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Assurance vie — Fonds €</div><input type="number" name="d_av_euros" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Assurance vie — Fonds UC</div><input type="number" name="d_av_uc" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">PEA / PEA-PME</div><input type="number" name="d_pea" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">PEE / PEG</div><input type="number" name="d_pee" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">PERCO</div><input type="number" name="d_perco" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">PER / PERP</div><input type="number" name="d_per" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">SCPI</div><input type="number" name="d_scpi_detail" placeholder="0"></div>
+            <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Autres placements</div><input type="number" name="d_autres_placements" placeholder="0"></div>
+          </div>
+          <div class="repeat-block" style="margin-top:18px;">
+            <div class="label-row">Épargne mensuelle actuelle</div>
+            <div class="line-table">
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Versement livrets / mois</div><input type="number" name="d_versement_livret" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Versement assurance vie / mois</div><input type="number" name="d_versement_av" placeholder="0"></div>
+              <div class="line-row" style="grid-template-columns:1fr 130px 0;"><div class="line-label">Versement investissement locatif / mois</div><input type="number" name="d_versement_locatif" placeholder="0"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECTION 5 : IMMOBILIER ============ -->
+      <section class="section" id="immobilier">
+        <div class="section-head">
+          <div>
+            <div class="section-num">Section 05</div>
+            <h2>Patrimoine immobilier</h2>
+          </div>
+        </div>
+        <p class="section-desc">Ajoutez un bloc pour chaque bien possédé (résidence principale, secondaire, locatif…).</p>
+        <hr class="section-divider">
+
+        <div id="propertyContainer"></div>
+        <button type="button" class="add-row-btn" id="addProperty">+ Ajouter un bien immobilier</button>
+      </section>
+
+      <!-- ============ SECTION 6 : ENVOI ============ -->
+      <section class="section" id="envoi">
+        <div class="section-head">
+          <div>
+            <div class="section-num">Section 06</div>
+            <h2>Validation &amp; envoi</h2>
+          </div>
+        </div>
+        <p class="section-desc">Vérifiez vos informations puis transmettez-les en toute confidentialité à votre conseiller.</p>
+        <hr class="section-divider">
+
+        <div class="field full" style="margin-bottom:24px;">
+          <label>Remarques complémentaires <span class="opt">(facultatif)</span></label>
+          <textarea name="remarques" placeholder="Projets à venir, contexte particulier, questions pour votre conseiller…"></textarea>
+        </div>
+
+        <div class="submit-block">
+          <h2>Transmettre mon dossier</h2>
+          <p>Vos données sont envoyées directement et exclusivement à votre conseiller. Aucune base de données tierce ne conserve ces informations au-delà de leur acheminement.</p>
+
+          <div class="consent-row">
+            <input type="checkbox" id="consent" required>
+            <label for="consent" style="font-weight:400;color:inherit;">J'autorise la transmission de ces informations à mon conseiller Prodemial dans le cadre exclusif de l'établissement de mon bilan patrimonial.</label>
+          </div>
+
+          <button type="submit" class="btn btn-bronze" id="submitBtn">Envoyer mon bilan au conseiller</button>
+          <div class="status-msg" id="statusMsg"></div>
+        </div>
+      </section>
+
+    </form>
+  </main>
+</div>
+
+<script>
+/* ============ CONFIGURATION ============
+   Remplacez FORM_ENDPOINT par l'URL fournie par votre service d'envoi
+   (Formspree : https://formspree.io/f/VOTRE_ID, ou équivalent EU type
+   Mailjet / Web3Forms). Le formulaire est conçu pour fonctionner avec
+   n'importe quel service acceptant un POST classique de formulaire HTML.
+*/
+const FORM_ENDPOINT = "https://formspree.io/f/VOTRE_ID_ICI";
+
+/* ---- Numéro de dossier généré localement (horodatage + aléa) ---- */
+const dossierNum = "BP-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random()*9000);
+document.getElementById('dossierNum').textContent = "DOSSIER N° " + dossierNum;
+
+/* ---- Mode switch (simplifié / détaillé) ---- */
+const modeButtons = document.querySelectorAll('.mode-switch button');
+const modeHint = document.getElementById('modeHint');
+const hints = {
+  simple: "La vue simplifiée regroupe vos revenus, charges et épargne par grandes catégories — idéale pour une première estimation rapide.",
+  detail: "La vue détaillée correspond ligne à ligne au document habituel de votre conseiller — recommandée pour un bilan précis."
+};
+modeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modeButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const mode = btn.dataset.mode;
+    modeHint.textContent = hints[mode];
+    document.querySelectorAll('.mode-block').forEach(block => {
+      block.style.display = (block.dataset.modeShow === mode) ? '' : 'none';
+    });
+  });
+});
+
+/* ---- Sommaire actif au scroll + suivi de complétion ---- */
+const sections = document.querySelectorAll('.section');
+const tocItems = document.querySelectorAll('#tocList li');
+
+function isSectionFilled(section){
+  const inputs = section.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="tel"], input[type="email"], select, textarea');
+  let filled = 0;
+  inputs.forEach(i => { if(i.value && i.value.trim() !== '') filled++; });
+  return inputs.length > 0 && filled > 0;
+}
+
+function updateProgress(){
+  let total = sections.length;
+  let done = 0;
+  sections.forEach(sec => {
+    const li = document.querySelector('#tocList li[data-section="'+sec.id+'"]');
+    if(isSectionFilled(sec)){
+      li.classList.add('done');
+      done++;
+    } else {
+      li.classList.remove('done');
+    }
+  });
+  const pct = Math.round((done/total)*100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = pct + ' % complété';
+}
+
+document.getElementById('bilanForm').addEventListener('input', updateProgress);
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    const id = entry.target.id;
+    const link = document.querySelector('#tocList a[href="#'+id+'"]');
+    if(entry.isIntersecting){
+      document.querySelectorAll('#tocList a').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+    }
+  });
+}, {rootMargin:"-20% 0px -70% 0px"});
+sections.forEach(s => observer.observe(s));
+
+/* ---- Biens immobiliers dynamiques ---- */
+let propertyCount = 0;
+function addPropertyBlock(){
+  propertyCount++;
+  const id = propertyCount;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'property-card';
+  wrapper.innerHTML = `
+    <div class="property-card-head">
+      <h3>Bien n°${id}</h3>
+      <button type="button" class="remove-btn" data-remove="${id}">Retirer</button>
+    </div>
+    <div class="grid cols-3">
+      <div class="field">
+        <label>Type de bien</label>
+        <select name="bien_type_${id}">
+          <option value="">Sélectionner…</option>
+          <option>Résidence principale</option>
+          <option>Résidence secondaire</option>
+          <option>Investissement locatif</option>
+          <option>Local commercial / autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Valeur estimée</label>
+        <div class="unit-field"><input type="number" name="bien_valeur_${id}" placeholder="0"><span class="unit-suffix">€</span></div>
+      </div>
+      <div class="field">
+        <label>Superficie</label>
+        <div class="unit-field"><input type="number" name="bien_surface_${id}" placeholder="0"><span class="unit-suffix">m²</span></div>
+      </div>
+      <div class="field full">
+        <label>Adresse</label>
+        <input type="text" name="bien_adresse_${id}" placeholder="Adresse du bien">
+      </div>
+      <div class="field">
+        <label>Mensualité de crédit <span class="opt">(si applicable)</span></label>
+        <div class="unit-field"><input type="number" name="bien_mensualite_${id}" placeholder="0"><span class="unit-suffix">€</span></div>
+      </div>
+      <div class="field">
+        <label>Capital restant dû</label>
+        <div class="unit-field"><input type="number" name="bien_crd_${id}" placeholder="0"><span class="unit-suffix">€</span></div>
+      </div>
+      <div class="field">
+        <label>Date de fin de crédit <span class="opt">(si applicable)</span></label>
+        <input type="date" name="bien_date_fin_${id}">
+      </div>
+    </div>
+  `;
+  document.getElementById('propertyContainer').appendChild(wrapper);
+  wrapper.querySelector('[data-remove]').addEventListener('click', () => {
+    wrapper.remove();
+    updateProgress();
+  });
+}
+document.getElementById('addProperty').addEventListener('click', addPropertyBlock);
+addPropertyBlock(); // un premier bloc par défaut
+
+/* ---- Soumission ---- */
+const form = document.getElementById('bilanForm');
+const statusMsg = document.getElementById('statusMsg');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusMsg.className = 'status-msg';
+  statusMsg.style.display = 'none';
+
+  if (FORM_ENDPOINT.includes('VOTRE_ID_ICI')) {
+    statusMsg.textContent = "Configuration requise : remplacez FORM_ENDPOINT dans le code par l'URL de votre service d'envoi avant la mise en service.";
+    statusMsg.classList.add('show','error');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Envoi en cours…";
+
+  const formData = new FormData(form);
+  formData.append('numero_dossier', dossierNum);
+  formData.append('date_envoi', new Date().toLocaleString('fr-FR'));
+
+  try {
+    const response = await fetch(FORM_ENDPOINT, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    });
+    if (response.ok) {
+      statusMsg.textContent = "Votre bilan patrimonial a bien été transmis à votre conseiller. Numéro de dossier : " + dossierNum;
+      statusMsg.classList.add('show','success');
+      submitBtn.textContent = "Envoyé ✓";
+    } else {
+      throw new Error('Erreur serveur');
+    }
+  } catch (err) {
+    statusMsg.textContent = "L'envoi a échoué. Vérifiez votre connexion et réessayez, ou contactez directement votre conseiller.";
+    statusMsg.classList.add('show','error');
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Envoyer mon bilan au conseiller";
+  }
+});
+
+updateProgress();
+</script>
+</body>
+</html>
